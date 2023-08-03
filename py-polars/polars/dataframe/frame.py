@@ -110,7 +110,6 @@ from polars.utils.various import (
 with contextlib.suppress(ImportError):  # Module not available when building docs
     from polars.polars import PyDataFrame
 
-
 if TYPE_CHECKING:
     import sys
     from datetime import timedelta
@@ -118,10 +117,12 @@ if TYPE_CHECKING:
     from typing import Literal
 
     import deltalake
-    from pyarrow.interchange.dataframe import _PyArrowDataFrame
     from xlsxwriter import Workbook
 
     from polars import Expr, LazyFrame, Series
+    from polars.internals.interchange.dataframe_protocol import (
+        DataFrame as DataFrameXchg,
+    )
     from polars.type_aliases import (
         AsofJoinStrategy,
         AvroCompression,
@@ -1206,7 +1207,7 @@ class DataFrame:
 
     def __dataframe__(
         self, nan_as_null: bool = False, allow_copy: bool = True
-    ) -> _PyArrowDataFrame:
+    ) -> DataFrameXchg:
         """
         Convert to a dataframe object implementing the dataframe interchange protocol.
 
@@ -1214,17 +1215,22 @@ class DataFrame:
         ----------
         nan_as_null
             Overwrite null values in the data with ``NaN``.
+
+            .. note::
+                This parameter currently has no effect.
         allow_copy
             Allow memory to be copied to perform the conversion. If set to False, causes
             conversions that are not zero-copy to fail.
+
+        Returns
+        -------
+        DataFrame interchange object which consuming library can use to ingress the
+        dataframe.
 
         Notes
         -----
         Details on the dataframe interchange protocol:
         https://data-apis.org/dataframe-protocol/latest/index.html
-
-        ``nan_as_null`` currently has no effect; once support for nullable extension
-        dtypes is added, this value should be propagated to columns.
 
         Polars currently relies on pyarrow's implementation of the dataframe interchange
         protocol. Therefore, pyarrow>=11.0.0 is required for this method to work.
